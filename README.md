@@ -1,4 +1,4 @@
-<p style="text-align: center">
+<p align="center">
   <img src="gopher.svg" alt="Gopher" width="200" height="200">
 </p>
 
