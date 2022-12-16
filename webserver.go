@@ -1,8 +1,7 @@
-package main
+package webserver
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -10,31 +9,27 @@ import (
 	"strings"
 )
 
-type Header struct {
-	Key   string
-	Value string
+type Server struct {
+	port string
 }
 
-type Request struct {
-	Method  string
-	Path    string
-	Proto   string
-	Headers map[string]string
-	Body    string
+func NewWebserver() *Server {
+	return &Server{}
 }
 
-func prettyPrint(i interface{}) string {
-	s, _ := json.MarshalIndent(i, "", "\t")
-	return string(s)
-}
+func (s *Server) Start(a string) {
 
-func main() {
-	log.Print("Running on port 8080\n")
-	ln, err := net.Listen("tcp", ":8080")
+	log.Printf("Running on %s\n", a)
+	ln, err := net.Listen("tcp", a)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer ln.Close()
+	defer func(ln net.Listener) {
+		err := ln.Close()
+		if err != nil {
+
+		}
+	}(ln)
 
 	for {
 		conn, err := ln.Accept()
@@ -43,8 +38,14 @@ func main() {
 		}
 
 		go func(c net.Conn) {
-			defer c.Close()
-			fmt.Printf("New connection from %s\n", c.RemoteAddr())
+			defer func(c net.Conn) {
+				err := c.Close()
+				if err != nil {
+
+				}
+			}(c)
+
+			log.Printf("New connection from %s\n", c.RemoteAddr())
 			reader := bufio.NewReader(c)
 
 			startLine, err := reader.ReadString('\n')
@@ -112,9 +113,6 @@ func main() {
 			if err != nil {
 				return
 			}
-
-			// Print the request
-			fmt.Printf("Request: %s\n", prettyPrint(request))
 
 		}(conn)
 	}
