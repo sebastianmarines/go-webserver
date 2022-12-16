@@ -16,11 +16,11 @@ type Header struct {
 }
 
 type Request struct {
-	Method string
-	Path   string
-	Proto  string
-	Header []Header
-	Body   string
+	Method  string
+	Path    string
+	Proto   string
+	Headers map[string]string
+	Body    string
 }
 
 func prettyPrint(i interface{}) string {
@@ -56,6 +56,7 @@ func main() {
 			fmt.Printf("Request: %s", startLine)
 
 			request := Request{}
+			request.Headers = make(map[string]string)
 			_, err = fmt.Sscanf(startLine, "%s %s %s", &request.Method, &request.Path, &request.Proto)
 			if err != nil {
 				// TODO: Handle error
@@ -83,23 +84,23 @@ func main() {
 				header.Value = strings.Trim(header.Value, " ")
 				// Remove "\r\n"
 				header.Value = header.Value[:len(header.Value)-2]
-				request.Header = append(request.Header, header)
+				request.Headers[header.Key] = header.Value
 			}
+
 			// Check if we have a Content-Length header
-			for _, header := range request.Header {
-				if header.Key == "Content-Length" {
-					// Read the body
-					size, err := strconv.Atoi(header.Value)
-					if err != nil {
-						log.Fatal(err)
-					}
-					body := make([]byte, size)
-					_, err = reader.Read(body)
-					if err != nil {
-						return
-					}
-					request.Body = string(body)
+			i, ok := request.Headers["Content-Length"]
+			if ok {
+				// Read the body
+				length, err := strconv.Atoi(i)
+				if err != nil {
+					log.Fatal(err)
 				}
+				body := make([]byte, length)
+				_, err = reader.Read(body)
+				if err != nil {
+					log.Fatal(err)
+				}
+				request.Body = string(body)
 			}
 
 			fmt.Printf("Closing connection from %s\n", c.RemoteAddr())
