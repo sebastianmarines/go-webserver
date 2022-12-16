@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
 	"strings"
 )
 
@@ -19,6 +20,7 @@ type Request struct {
 	Path   string
 	Proto  string
 	Header []Header
+	Body   string
 }
 
 func prettyPrint(i interface{}) string {
@@ -83,13 +85,32 @@ func main() {
 				header.Value = header.Value[:len(header.Value)-2]
 				request.Header = append(request.Header, header)
 			}
+			// Check if we have a Content-Length header
+			for _, header := range request.Header {
+				if header.Key == "Content-Length" {
+					// Read the body
+					size, err := strconv.Atoi(header.Value)
+					if err != nil {
+						log.Fatal(err)
+					}
+					body := make([]byte, size)
+					_, err = reader.Read(body)
+					if err != nil {
+						return
+					}
+					request.Body = string(body)
+				}
+			}
 
 			fmt.Printf("Closing connection from %s\n", c.RemoteAddr())
 
 			response := "HTTP/1.1 200 OK\r\n\r\nHello World!"
 
 			// Send the response back to the client
-			conn.Write([]byte(response))
+			_, err = conn.Write([]byte(response))
+			if err != nil {
+				return
+			}
 
 			// Print the request
 			fmt.Printf("Request: %s\n", prettyPrint(request))
