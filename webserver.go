@@ -48,21 +48,33 @@ func (s *Server) Start(a string) {
 			log.Printf("New connection from %s\n", c.RemoteAddr())
 			reader := bufio.NewReader(c)
 
+			request := Request{}
+			request.Headers = make(map[string]string)
+
 			startLine, err := reader.ReadString('\n')
+			method, path, proto, err := validateHttpStartLine(startLine)
+
+			request.Method = method
+			request.Path = path
+			request.Proto = proto
 
 			if err != nil {
-				log.Fatal(err)
+				response := Response{
+					StatusCode: 400,
+					Headers:    make(map[string]string),
+					Body:       "Bad Request",
+				}
+				response.Headers["Content-Length"] = strconv.Itoa(len(response.Body))
+				response.Headers["Content-Type"] = "text/plain"
+				response.Headers["Connection"] = "close"
+				_, err := c.Write([]byte(response.String()))
+				if err != nil {
+					return
+				}
+				return
 			}
 
 			fmt.Printf("Request: %s", startLine)
-
-			request := Request{}
-			request.Headers = make(map[string]string)
-			_, err = fmt.Sscanf(startLine, "%s %s %s", &request.Method, &request.Path, &request.Proto)
-			if err != nil {
-				// TODO: Handle error
-				log.Fatal(err)
-			}
 
 			for {
 				line, err := reader.ReadString('\n')
