@@ -2,10 +2,29 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
+	"strings"
 )
+
+type Header struct {
+	Key   string
+	Value string
+}
+
+type Request struct {
+	Method string
+	Path   string
+	Proto  string
+	Header []Header
+}
+
+func prettyPrint(i interface{}) string {
+	s, _ := json.MarshalIndent(i, "", "\t")
+	return string(s)
+}
 
 func main() {
 	log.Print("Running on port 8080\n")
@@ -34,17 +53,35 @@ func main() {
 
 			fmt.Printf("Request: %s", startLine)
 
+			request := Request{}
+			_, err = fmt.Sscanf(startLine, "%s %s %s", &request.Method, &request.Path, &request.Proto)
+			if err != nil {
+				// TODO: Handle error
+				log.Fatal(err)
+			}
+
 			for {
 				line, err := reader.ReadString('\n')
 				if err != nil {
 					log.Fatal(err)
 				}
 
+				// End of headers
 				if line == "\r\n" {
-					fmt.Printf("End of headers\n")
 					break
 				}
-				fmt.Printf("Header: %q\n", line)
+				header := Header{}
+				parts := strings.Split(line, ":")
+				header.Key = parts[0]
+				if len(parts) > 2 {
+					header.Value = strings.Join(parts[1:], ":")
+				} else {
+					header.Value = parts[1]
+				}
+				header.Value = strings.Trim(header.Value, " ")
+				// Remove "\r\n"
+				header.Value = header.Value[:len(header.Value)-2]
+				request.Header = append(request.Header, header)
 			}
 
 			fmt.Printf("Closing connection from %s\n", c.RemoteAddr())
@@ -54,23 +91,9 @@ func main() {
 			// Send the response back to the client
 			conn.Write([]byte(response))
 
-			//for {
-			//	msg, err := reader.ReadString('\n')
-			//	if err == io.EOF {
-			//		break
-			//	}
-			//	if err != nil {
-			//		fmt.Printf("Connection from %s closed\n", c.RemoteAddr())
-			//		return
-			//	}
-			//	fmt.Printf("Message: %s\n", msg)
-			//	i, err := c.Write([]byte("Hello from server"))
-			//	if err != nil {
-			//		fmt.Printf("Connection from %s closed\n", c.RemoteAddr())
-			//		return
-			//	}
-			//	fmt.Printf("Wrote %d bytes\n", i)
-			//}
+			// Print the request
+			fmt.Printf("Request: %s\n", prettyPrint(request))
+
 		}(conn)
 	}
 }
