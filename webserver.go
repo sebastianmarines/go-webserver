@@ -10,11 +10,19 @@ import (
 )
 
 type Server struct {
-	port string
+	port   string
+	routes map[string]Route
+}
+
+type Route struct {
+	Path    string
+	Handler func(Request) Response
 }
 
 func NewWebserver() *Server {
-	return &Server{}
+	server := Server{}
+	server.routes = make(map[string]Route)
+	return &server
 }
 
 func (s *Server) Start(a string) {
@@ -67,7 +75,7 @@ func (s *Server) Start(a string) {
 				response.Headers["Content-Length"] = strconv.Itoa(len(response.Body))
 				response.Headers["Content-Type"] = "text/plain"
 				response.Headers["Connection"] = "close"
-				_, err := c.Write([]byte(response.String()))
+				_, err := c.Write(response.String())
 				if err != nil {
 					return
 				}
@@ -116,16 +124,36 @@ func (s *Server) Start(a string) {
 				request.Body = string(body)
 			}
 
-			fmt.Printf("Closing connection from %s\n", c.RemoteAddr())
+			response := s.handleRoute(request)
 
-			response := "HTTP/1.1 200 OK\r\n\r\nHello World!"
-
-			// Send the response back to the client
-			_, err = conn.Write([]byte(response))
+			response.Headers["Content-Length"] = strconv.Itoa(len(response.Body))
+			// If content type is not set, set it to text/plain
+			_, ok = response.Headers["Content-Type"]
+			if !ok {
+				response.Headers["Content-Type"] = "text/plain"
+			}
+			response.Headers["Connection"] = "close"
+			_, err = c.Write(response.String())
 			if err != nil {
 				return
 			}
 
 		}(conn)
+	}
+}
+
+func (s *Server) AddRoute(r string, h func(Request) Response) {
+	s.routes[r] = Route{Path: r, Handler: h}
+}
+
+func (s *Server) handleRoute(r Request) Response {
+	i, ok := s.routes[r.Path]
+	if ok {
+		return i.Handler(r)
+	}
+	return Response{
+		StatusCode: 404,
+		Headers:    make(map[string]string),
+		Body:       "Not Found",
 	}
 }

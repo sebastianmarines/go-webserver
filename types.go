@@ -23,11 +23,11 @@ type Response struct {
 
 func (r Response) String() []byte {
 	response := ""
-	response += fmt.Sprintf("HTTP/1.1 %d\r;", r.StatusCode)
+	response += fmt.Sprintf("HTTP/1.1 %d\r\n", r.StatusCode)
 	for k, v := range r.Headers {
-		response += fmt.Sprintf("%s: %s\r;", k, v)
+		response += fmt.Sprintf("%s: %s\r\n", k, v)
 	}
-	response += "\r;"
+	response += "\r\n"
 	response += r.Body
 	return []byte(response)
 }

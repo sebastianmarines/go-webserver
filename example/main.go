@@ -1,7 +1,17 @@
 package main
 
-import "github.com/sebastianmarines/go-webserver"
+import web "github.com/sebastianmarines/go-webserver"
 
 func main() {
-	webserver.NewWebserver().Start(":8080")
+	server := web.NewWebserver()
+	server.AddRoute("/", func(request web.Request) web.Response {
+		return web.Response{
+			StatusCode: 200,
+			Headers: map[string]string{
+				"Content-Type": "text/html",
+			},
+			Body: "<h1>Hello world!</h1>",
+		}
+	})
+	server.Start(":8080")
 }
