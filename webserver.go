@@ -2,7 +2,6 @@ package webserver
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"net"
 	"strconv"
@@ -82,7 +81,7 @@ func (s *Server) Start(a string) {
 				return
 			}
 
-			fmt.Printf("Request: %s", startLine)
+			log.Printf("Request: %s", startLine)
 
 			for {
 				line, err := reader.ReadString('\n')
@@ -139,21 +138,5 @@ func (s *Server) Start(a string) {
 			}
 
 		}(conn)
-	}
-}
-
-func (s *Server) AddRoute(r string, h func(Request) Response) {
-	s.routes[r] = Route{Path: r, Handler: h}
-}
-
-func (s *Server) handleRoute(r Request) Response {
-	i, ok := s.routes[r.Path]
-	if ok {
-		return i.Handler(r)
-	}
-	return Response{
-		StatusCode: 404,
-		Headers:    make(map[string]string),
-		Body:       "Not Found",
 	}
 }

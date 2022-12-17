@@ -4,7 +4,7 @@ import web "github.com/sebastianmarines/go-webserver"
 
 func main() {
 	server := web.NewWebserver()
-	server.AddRoute("/", func(request web.Request) web.Response {
+	server.Get("/", func(request web.Request) web.Response {
 		return web.Response{
 			StatusCode: 200,
 			Headers: map[string]string{

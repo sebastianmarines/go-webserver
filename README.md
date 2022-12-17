@@ -7,7 +7,7 @@
 A simple, lightweight web server built with Go.
 
 # Features
-- [ ] Supports GET, POST, PUT, DELETE, and OPTIONS requests
+- [x] Supports GET, POST, PUT, DELETE, and OPTIONS requests
 - [ ] Supports JSON and HTML responses
 - [x] Supports custom routes
 - [ ] Customizable error pages
