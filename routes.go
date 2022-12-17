@@ -1,25 +1,120 @@
 package webserver
 
-func (s *Server) addRoute(method string, path string, handler func(Request) Response) {
-	route := Route{
-		Path:    path,
-		Handler: handler,
+import (
+	"strings"
+)
+
+type RouteNode struct {
+	Path     string
+	Handlers map[string]HandlerFunc
+	Child    []*RouteNode
+}
+
+type RouteTree struct {
+	Root *RouteNode
+}
+
+type HandlerFunc func(Request) Response
+
+func (s *Server) addRoute(method string, path string, handler HandlerFunc) {
+	segments := strings.Split(path, "/")
+	node := s.routes.Root
+	if node == nil {
+		node = &RouteNode{}
+		s.routes.Root = node
 	}
-	s.routes[method+path] = route
+	// traverse tree
+	var lastSegment string
+	for i, segment := range segments {
+		// Check if it is root path "/" and if it has a handler
+		if lastSegment == "" && segment == "" && i != 0 {
+			if node.Handlers == nil {
+				node.Handlers = make(map[string]HandlerFunc)
+			}
+			node.Handlers[method] = handler
+			return
+		}
+		lastSegment = segment
+		// check if segment exists
+		if segment == "" {
+			continue
+		}
+		// check if segment is a parameter
+		found := false
+		for _, child := range node.Child {
+			// check if segment is a parameter
+			if child.Path == segment {
+				node = child
+				found = true
+				break
+			}
+		}
+		// if segment is not a parameter, create a new node
+		if !found {
+			newNode := RouteNode{
+				Path:     segment,
+				Handlers: make(map[string]HandlerFunc),
+				Child:    make([]*RouteNode, 0),
+			}
+			// register handler if it is the last segment
+			if segment == segments[len(segments)-1] {
+				newNode.Handlers[method] = handler
+			}
+			node.Child = append(node.Child, &newNode)
+			node = &newNode
+		}
+	}
 }
 
 func (s *Server) handleRoute(r Request) Response {
-	route, ok := s.routes[r.Method+r.Path]
+	segments := strings.Split(r.Path, "/")
+	node := s.routes.Root
+	if node == nil {
+		return NotFoundResponse()
+	}
+	pathParams := make(map[string]string)
+	var lastSegment string
+	// traverse tree
+	for i, segment := range segments {
+		// Check if it is root path "/" and if it has a handler
+		if lastSegment == "" && segment == "" && i != 0 {
+			if handler, ok := node.Handlers[r.Method]; ok {
+				return handler(r)
+			}
+			return NotFoundResponse()
+		}
+		lastSegment = segment
+		// check if segment exists
+		if segment == "" {
+			continue
+		}
+		// check if segment is a parameter
+		found := false
+		for _, child := range node.Child {
+			// check if segment is a parameter
+			if child.Path == segment {
+				node = child
+				found = true
+				break
+			}
+			if child.Path[0] == ':' {
+				node = child
+				found = true
+				pathParams[child.Path[1:]] = segment
+				break
+			}
+		}
+		if !found {
+			return NotFoundResponse()
+		}
+	}
+	// check if handler exists
+	handler, ok := node.Handlers[r.Method]
 	if ok {
-		return route.Handler(r)
+		r.PathParams = pathParams
+		return handler(r)
 	}
-	return Response{
-		StatusCode: 404,
-		Headers: map[string]string{
-			"Content-Type": "text/html",
-		},
-		Body: "<h1>404 Not Found</h1>",
-	}
+	return NotFoundResponse()
 }
 
 func (s *Server) Get(path string, handler func(Request) Response) {

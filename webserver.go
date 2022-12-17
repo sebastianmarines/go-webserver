@@ -10,17 +10,12 @@ import (
 
 type Server struct {
 	port   string
-	routes map[string]Route
-}
-
-type Route struct {
-	Path    string
-	Handler func(Request) Response
+	routes RouteTree
 }
 
 func NewWebserver() *Server {
 	server := Server{}
-	server.routes = make(map[string]Route)
+	server.routes = RouteTree{}
 	return &server
 }
 
@@ -57,6 +52,7 @@ func (s *Server) Start(a string) {
 
 			request := Request{}
 			request.Headers = make(map[string]string)
+			request.PathParams = make(map[string]string)
 
 			startLine, err := reader.ReadString('\n')
 			method, path, proto, err := validateHttpStartLine(startLine)

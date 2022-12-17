@@ -60,3 +60,7 @@ func TextResponse(content string, status int, headers map[string]string) Respons
 	}
 	return NewResponse(content, status, headers, "text/plain")
 }
+
+func NotFoundResponse() Response {
+	return TextResponse("<h1>404 Not Found</h1>", 404, nil)
+}
