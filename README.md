@@ -8,7 +8,7 @@ A simple, lightweight web server built with Go.
 
 # Features
 - [x] Supports GET, POST, PUT, DELETE, and OPTIONS requests
-- [ ] Supports JSON and HTML responses
+- [x] Supports JSON and HTML responses
 - [x] Supports custom routes
 - [ ] Customizable error pages
 - [ ] Support for static files
@@ -27,14 +27,8 @@ import web "github.com/sebastianmarines/go-webserver"
 
 func main() {
 	server := web.NewWebserver()
-	server.AddRoute("/", func(request web.Request) web.Response {
-		return web.Response{
-			StatusCode: 200,
-			Headers: map[string]string{
-				"Content-Type": "text/html",
-			},
-			Body: "<h1>Hello world!</h1>",
-		}
+	server.Get("/", func(request web.Request) web.Response {
+		return web.HTMLResponse("<h1>Hello World!</h1>", 200, nil)
 	})
 	server.Start(":8080")
 }
