@@ -11,7 +11,7 @@ A simple, lightweight web server built with Go.
 - [x] Supports JSON and HTML responses
 - [x] Supports custom routes
 - [x] Supports for path parameters in routes
-- [ ] Supports for query parameters in routes
+- [x] Supports for query parameters in routes
 - [ ] Customizable error pages
 - [ ] Support for static files
 
