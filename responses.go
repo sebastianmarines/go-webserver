@@ -10,12 +10,17 @@ type Response struct {
 }
 
 func (r Response) build() []byte {
-	response := ""
-	response += "HTTP/1.1 " + strconv.Itoa(r.StatusCode) + "\r\n"
+	statusCode := strconv.Itoa(r.StatusCode)
+	statusMessage, ok := statusCodes[statusCode]
+	if !ok {
+		statusMessage = "Unknown"
+	}
+	response := "HTTP/1.1 " + statusCode + " " + statusMessage + "\r\n"
 	for k, v := range r.Headers {
 		response += k + ": " + v + "\r\n"
 	}
 	response += "Content-Length: " + strconv.Itoa(len(r.Body)) + "\r\n"
+	response += "Content-Type: " + r.MediaType + "\r\n"
 	response += "\r\n"
 
 	response += r.Body
