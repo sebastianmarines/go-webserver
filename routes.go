@@ -1,6 +1,8 @@
 package webserver
 
-import "strings"
+import (
+	"strings"
+)
 
 type RouteNode struct {
 	Path     string
@@ -22,7 +24,17 @@ func (s *Server) addRoute(method string, path string, handler HandlerFunc) {
 		s.routes.Root = node
 	}
 	// traverse tree
-	for _, segment := range segments {
+	var lastSegment string
+	for i, segment := range segments {
+		// Check if it is root path "/" and if it has a handler
+		if lastSegment == "" && segment == "" && i != 0 {
+			if node.Handlers == nil {
+				node.Handlers = make(map[string]HandlerFunc)
+			}
+			node.Handlers[method] = handler
+			return
+		}
+		lastSegment = segment
 		// check if segment exists
 		if segment == "" {
 			continue

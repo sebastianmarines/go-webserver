@@ -31,3 +31,18 @@ func TestAddRoute(t *testing.T) {
 		}
 	}
 }
+
+func TestAddRootRoute(t *testing.T) {
+	server := NewWebserver()
+	server.Get("/", func(request Request) Response {
+		return HTMLResponse("<h1>Hello World!</h1>", 200, nil)
+	})
+	// Traverse the tree to see if the route was added
+	node := server.routes.Root
+	if node == nil {
+		t.Error("Root node is nil")
+	}
+	if node.Handlers["GET"] == nil {
+		t.Error("Route not added")
+	}
+}
