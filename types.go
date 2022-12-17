@@ -6,10 +6,11 @@ type Header struct {
 }
 
 type Request struct {
-	Method     string
-	Path       string
-	Proto      string
-	Headers    map[string]string
-	Body       string
-	PathParams map[string]string
+	Method      string
+	Path        string
+	Proto       string
+	Headers     map[string]string
+	Body        string
+	PathParams  map[string]string
+	QueryParams map[string]string
 }
