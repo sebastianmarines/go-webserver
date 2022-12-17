@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"log"
 	"net"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -53,6 +54,7 @@ func (s *Server) Start(a string) {
 			request := Request{}
 			request.Headers = make(map[string]string)
 			request.PathParams = make(map[string]string)
+			request.QueryParams = make(map[string]string)
 
 			startLine, err := reader.ReadString('\n')
 			method, path, proto, err := validateHttpStartLine(startLine)
@@ -110,6 +112,16 @@ func (s *Server) Start(a string) {
 					log.Fatal(err)
 				}
 				request.Body = string(body)
+			}
+
+			u, err := url.Parse(request.Path)
+			if err != nil {
+				log.Fatal(err)
+			}
+			request.Path = u.Path
+			queryParams := u.Query()
+			for k, v := range queryParams {
+				request.QueryParams[k] = v[0]
 			}
 
 			response := s.handleRoute(request)
