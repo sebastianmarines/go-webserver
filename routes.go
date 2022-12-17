@@ -1,18 +1,64 @@
 package webserver
 
-func (s *Server) addRoute(method string, path string, handler func(Request) Response) {
-	route := Route{
-		Path:    path,
-		Handler: handler,
+import "strings"
+
+type RouteNode struct {
+	Path     string
+	Handlers map[string]HandlerFunc
+	Child    []*RouteNode
+}
+
+type RouteTree struct {
+	Root *RouteNode
+}
+
+type HandlerFunc func(Request) Response
+
+func (s *Server) addRoute(method string, path string, handler HandlerFunc) {
+	segments := strings.Split(path, "/")
+	node := s.routes.Root
+	if node == nil {
+		node = &RouteNode{}
+		s.routes.Root = node
 	}
-	s.routes[method+path] = route
+	// traverse tree
+	for _, segment := range segments {
+		// check if segment exists
+		if segment == "" {
+			continue
+		}
+		// check if segment is a parameter
+		found := false
+		for _, child := range node.Child {
+			// check if segment is a parameter
+			if child.Path == segment {
+				node = child
+				found = true
+				break
+			}
+		}
+		// if segment is not a parameter, create a new node
+		if !found {
+			newNode := RouteNode{
+				Path:     segment,
+				Handlers: make(map[string]HandlerFunc),
+				Child:    make([]*RouteNode, 0),
+			}
+			// register handler if it is the last segment
+			if segment == segments[len(segments)-1] {
+				newNode.Handlers[method] = handler
+			}
+			node.Child = append(node.Child, &newNode)
+			node = &newNode
+		}
+	}
 }
 
 func (s *Server) handleRoute(r Request) Response {
-	route, ok := s.routes[r.Method+r.Path]
-	if ok {
-		return route.Handler(r)
-	}
+	//route, ok := s.routes[r.Method+r.Path]
+	//if ok {
+	//	return route.Handler(r)
+	//}
 	return Response{
 		StatusCode: 404,
 		Headers: map[string]string{
