@@ -66,15 +66,8 @@ func (s *Server) Start(a string) {
 			request.Proto = proto
 
 			if err != nil {
-				response := Response{
-					StatusCode: 400,
-					Headers:    make(map[string]string),
-					Body:       "Bad Request",
-				}
-				response.Headers["Content-Length"] = strconv.Itoa(len(response.Body))
-				response.Headers["Content-Type"] = "text/plain"
-				response.Headers["Connection"] = "close"
-				_, err := c.Write(response.String())
+				response := TextResponse("<h1>400 Bad Request</h1>", 400, nil)
+				_, err := c.Write(response.build())
 				if err != nil {
 					return
 				}
@@ -125,14 +118,7 @@ func (s *Server) Start(a string) {
 
 			response := s.handleRoute(request)
 
-			response.Headers["Content-Length"] = strconv.Itoa(len(response.Body))
-			// If content type is not set, set it to text/plain
-			_, ok = response.Headers["Content-Type"]
-			if !ok {
-				response.Headers["Content-Type"] = "text/plain"
-			}
-			response.Headers["Connection"] = "close"
-			_, err = c.Write(response.String())
+			_, err = c.Write(response.build())
 			if err != nil {
 				return
 			}
