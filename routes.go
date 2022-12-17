@@ -67,17 +67,46 @@ func (s *Server) addRoute(method string, path string, handler HandlerFunc) {
 }
 
 func (s *Server) handleRoute(r Request) Response {
-	//route, ok := s.routes[r.Method+r.Path]
-	//if ok {
-	//	return route.Handler(r)
-	//}
-	return Response{
-		StatusCode: 404,
-		Headers: map[string]string{
-			"Content-Type": "text/html",
-		},
-		Body: "<h1>404 Not Found</h1>",
+	segments := strings.Split(r.Path, "/")
+	node := s.routes.Root
+	if node == nil {
+		return NotFoundResponse()
 	}
+	// traverse tree
+	var lastSegment string
+	for i, segment := range segments {
+		// Check if it is root path "/" and if it has a handler
+		if lastSegment == "" && segment == "" && i != 0 {
+			if handler, ok := node.Handlers[r.Method]; ok {
+				return handler(r)
+			}
+			return NotFoundResponse()
+		}
+		lastSegment = segment
+		// check if segment exists
+		if segment == "" {
+			continue
+		}
+		// check if segment is a parameter
+		found := false
+		for _, child := range node.Child {
+			// check if segment is a parameter
+			if child.Path == segment {
+				node = child
+				found = true
+				break
+			}
+		}
+		if !found {
+			return NotFoundResponse()
+		}
+	}
+	// check if handler exists
+	handler, ok := node.Handlers[r.Method]
+	if ok {
+		return handler(r)
+	}
+	return NotFoundResponse()
 }
 
 func (s *Server) Get(path string, handler func(Request) Response) {
