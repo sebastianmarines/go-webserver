@@ -61,10 +61,6 @@ func (s *Server) Start(a string) {
 			startLine, err := reader.ReadString('\n')
 			method, path, proto, err := validateHttpStartLine(startLine)
 
-			request.Method = method
-			request.Path = path
-			request.Proto = proto
-
 			if err != nil {
 				response := TextResponse("<h1>400 Bad Request</h1>", 400, nil)
 				_, err := c.Write(response.build())
@@ -73,6 +69,10 @@ func (s *Server) Start(a string) {
 				}
 				return
 			}
+
+			request.Method = method
+			request.Path = path
+			request.Proto = proto
 
 			log.Printf("Request: %s", startLine)
 
