@@ -72,8 +72,9 @@ func (s *Server) handleRoute(r Request) Response {
 	if node == nil {
 		return NotFoundResponse()
 	}
-	// traverse tree
+	pathParams := make(map[string]string)
 	var lastSegment string
+	// traverse tree
 	for i, segment := range segments {
 		// Check if it is root path "/" and if it has a handler
 		if lastSegment == "" && segment == "" && i != 0 {
@@ -96,6 +97,12 @@ func (s *Server) handleRoute(r Request) Response {
 				found = true
 				break
 			}
+			if child.Path[0] == ':' {
+				node = child
+				found = true
+				pathParams[child.Path[1:]] = segment
+				break
+			}
 		}
 		if !found {
 			return NotFoundResponse()
@@ -104,6 +111,7 @@ func (s *Server) handleRoute(r Request) Response {
 	// check if handler exists
 	handler, ok := node.Handlers[r.Method]
 	if ok {
+		r.PathParams = pathParams
 		return handler(r)
 	}
 	return NotFoundResponse()

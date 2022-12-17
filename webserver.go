@@ -52,6 +52,7 @@ func (s *Server) Start(a string) {
 
 			request := Request{}
 			request.Headers = make(map[string]string)
+			request.PathParams = make(map[string]string)
 
 			startLine, err := reader.ReadString('\n')
 			method, path, proto, err := validateHttpStartLine(startLine)

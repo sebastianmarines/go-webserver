@@ -46,3 +46,21 @@ func TestAddRootRoute(t *testing.T) {
 		t.Error("Route not added")
 	}
 }
+
+func TestPathParameters(t *testing.T) {
+	server := NewWebserver()
+	server.Get("/hello/:greeting", func(request Request) Response {
+		if request.PathParams["greeting"] != "world" {
+			t.Error("Path parameter not set")
+		}
+		return HTMLResponse("<h1>Hello World!</h1>", 200, nil)
+	})
+	request := Request{
+		Method: "GET",
+		Path:   "/hello/world",
+	}
+	response := server.handleRoute(request)
+	if response.StatusCode != 200 {
+		t.Error("Route not found")
+	}
+}
